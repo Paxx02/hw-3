@@ -1,6 +1,6 @@
 ---
 title: "Homework 3"
-author: "[Insert your name here]{style='background-color: yellow;'}"
+author: "[Conner Langnas]{style='background-color: yellow;'}"
 toc: true
 title-block-banner: true
 title-block-style: default
@@ -28,7 +28,7 @@ For this assignment, we will be using the [Wine Quality](https://archive.ics.uci
 
 We will be using the following libraries:
 
-```R
+```{r}
 library(readr)
 library(tidyr)
 library(dplyr)
@@ -50,14 +50,14 @@ Regression with categorical covariate and $t$-Test
 
 Read the wine quality datasets from the specified URLs and store them in data frames `df1` and `df2`.
 
-```R
+```{r}
 url1 <- "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
 
 url2 <- "https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
 
 
-df1 <- ... # Insert your code here
-df2 <- ... # Insert your code here
+df1 <- read.csv(url1, header = TRUE, sep = ";") 
+df2 <- read.csv(url2, header = TRUE, sep = ";")
 ```
 
 ---
@@ -73,9 +73,26 @@ Perform the following tasks to prepare the data frame `df` for analysis:
 1. Remove rows (if any) with missing values.
 
 
-```R
-df <- ... # Insert your code here
+```{r}
+df1$type = "white"
+df2$type = "red"
+
+df <- rbind(df1, df2)
+
+colnames(df) <- gsub('\\.', '_', colnames(df))
+
+df <- df %>%
+  select(!fixed_acidity & !free_sulfur_dioxide)
+
+df$type <- factor(df$type)
+
+df <- df %>%
+  drop_na()
 ```
+```{r}
+dim(df)
+```
+
 
 
 Your output to `R dim(df)` should be
@@ -98,10 +115,27 @@ Recall from STAT 200, the method to compute the $t$ statistic for the the differ
 3. Using `sp_squared` and `diff_mean`, compute the $t$ Statistic, and store its value in a variable called `t1`.
 
 
-```R
-diff_mean <- ... # Insert your code here
-sp <-  ... # Insert your code here
-t1 <-  ... # Insert your code here
+```{r}
+W_mean <- mean(df$quality[df$type == 'white'])
+R_mean <- mean(df$quality[df$type == 'red'])
+
+
+diff_mean <- mean(W_mean - R_mean)
+
+n1 <- length(df$quality[df$type == 'white'])
+n2 <- length(df$quality[df$type == 'red'])
+
+v1 <- var(df$quality[df$type == 'white'])
+v2 <- var(df$quality[df$type == 'red'])
+
+sp_squared <- ((n1-1)*v1 + (n2-1)*v2) / (n1+n2-2)
+
+s1 <- sd(df$quality[df$type == 'white'])
+s2 <- sd(df$quality[df$type == 'red'])
+
+
+t1 <- diff_mean / sqrt((sp_squared*(1/n1 + 1/n2)))
+t1
 ```
 
 
@@ -113,9 +147,10 @@ Equivalently, R has a function called `t.test()` which enables you to perform a 
 
 Perform a two-sample t-test to compare the quality of white and red wines using the `t.test()` function with the setting `var.equal=TRUE`. Store the t-statistic in `t2`.
 
-```R
-t_test <- t.test(...) # Insert your code here
-t2 <- ... # Insert your code here
+```{r}
+t_test <- t.test(df$quality[df$type == "white"], df$quality[df$type == "red"], var.equal = TRUE) 
+t2 <- t_test$statistic 
+
 ```
 
 ---
@@ -124,9 +159,9 @@ t2 <- ... # Insert your code here
 
 Fit a linear regression model to predict `quality` from `type` using the `lm()` function, and extract the $t$-statistic for the `type` coefficient from the model summary. Store this $t$-statistic in `t3`.
 
-```R
-fit <- lm(...) # Insert your here
-t3 <- ... # Insert your here
+```{r}
+fit <- lm(quality ~ type, data = df) # Insert your here
+t3 <- summary(fit)$coefficients[2, "t value"]
 ```
 
 
@@ -136,10 +171,10 @@ t3 <- ... # Insert your here
 
 Print a vector containing the values of `t1`, `t2`, and `t3`. What can you conclude from this? Why?
 
-```R
-c(t1, t2, t3) # Insert your code here
+```{r}
+c(t1, t2, t3) 
 ```
-
+We can conclude that all the values are the same
 
 
 
@@ -161,8 +196,10 @@ Collinearity
 Fit a linear regression model with all predictors against the response variable `quality`. Use the `broom::tidy()` function to print a summary of the fitted model. What can we conclude from the model summary?
 
 
-```R
-... # Insert your code here
+```{r}
+model <- lm(quality ~ ., data = df)
+broom::tidy(summary(full_model))
+
 ```
 
 
